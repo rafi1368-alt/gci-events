@@ -48,10 +48,14 @@ app.post("/api/events", basicAuth, upload.single("image"), async function (req, 
     var repeatFrequency = body.repeatFrequency || "none";
 
     if (repeatFrequency !== "none") {
-      var created = store.createEventSeries(fields, repeatFrequency, body.repeatCount);
+      var weekdays = (body.repeatWeekdays || "")
+        .split(",")
+        .map(function (s) { return parseInt(s, 10); })
+        .filter(function (n) { return n >= 0 && n <= 6; });
+      var created = store.createEventSeries(fields, repeatFrequency, weekdays, body.repeatEndDate);
       var seriesPaths = ["data/events.json"];
       if (imageFile) seriesPaths.push("public/images/" + imageFile);
-      var seriesResult = await git.saveAndPublish(seriesPaths, "Add event series: " + created[0].type + " starting " + created[0].date + " (x" + created.length + " " + repeatFrequency + ")");
+      var seriesResult = await git.saveAndPublish(seriesPaths, "Add event series: " + created[0].title + " (x" + created.length + " " + repeatFrequency + ")");
       if (!seriesResult.ok) return res.status(207).json({ events: created, warning: "Saved locally, but publishing to GitHub failed — this may not survive a restart.", steps: seriesResult.steps });
       return res.status(201).json({ events: created });
     }
@@ -59,7 +63,7 @@ app.post("/api/events", basicAuth, upload.single("image"), async function (req, 
     var event = store.createEvent(fields);
     var publishPaths = ["data/events.json"];
     if (imageFile) publishPaths.push("public/images/" + imageFile);
-    var result = await git.saveAndPublish(publishPaths, "Add event: " + event.type + " " + event.date);
+    var result = await git.saveAndPublish(publishPaths, "Add event: " + event.title + " (" + event.date + ")");
     if (!result.ok) return res.status(207).json({ event: event, warning: "Saved locally, but publishing to GitHub failed — this may not survive a restart.", steps: result.steps });
     res.status(201).json({ event: event });
   } catch (err) {
@@ -80,7 +84,7 @@ app.patch("/api/events/:id", basicAuth, upload.single("image"), async function (
     var publishPaths = ["data/events.json"];
     if (imageFile) publishPaths.push("public/images/" + imageFile);
     if (result1.replacedImageFile) store.deleteImageFile(result1.replacedImageFile);
-    var result = await git.saveAndPublish(publishPaths, "Update event: " + result1.event.type + " " + result1.event.date);
+    var result = await git.saveAndPublish(publishPaths, "Update event: " + result1.event.title + " (" + result1.event.date + ")");
     if (!result.ok) return res.status(207).json({ event: result1.event, warning: "Saved locally, but publishing to GitHub failed — this may not survive a restart.", steps: result.steps });
     res.json({ event: result1.event });
   } catch (err) {
@@ -92,7 +96,7 @@ app.delete("/api/events/:id", basicAuth, async function (req, res) {
   try {
     var removed = store.deleteEvent(req.params.id);
     if (removed.imageFile) store.deleteImageFile(removed.imageFile);
-    var result = await git.saveAndPublish(["data/events.json", "public/images"], "Delete event: " + removed.type + " " + removed.date);
+    var result = await git.saveAndPublish(["data/events.json", "public/images"], "Delete event: " + removed.title + " (" + removed.date + ")");
     if (!result.ok) return res.status(207).json({ warning: "Deleted locally, but publishing to GitHub failed — this may not survive a restart.", steps: result.steps });
     res.status(204).end();
   } catch (err) {

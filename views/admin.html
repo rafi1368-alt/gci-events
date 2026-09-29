@@ -148,6 +148,19 @@
 
   #panel-actions{display:flex; justify-content:space-between; align-items:center; margin-top:1.2rem;}
   #panel-actions .right{display:flex; gap:.5rem;}
+
+  .section-title{
+    font-size:.76rem; font-weight:700; color:var(--ink-soft); text-transform:uppercase;
+    letter-spacing:.05em; margin:0 0 .7rem;
+  }
+  #repeat-row{
+    border:1px solid var(--line); border-radius:12px; padding:.9rem .9rem .1rem; margin-bottom:1rem;
+  }
+  #weekday-checks{display:flex; flex-wrap:wrap; gap:.6rem;}
+  #weekday-checks label{
+    display:flex; align-items:center; gap:.3rem; font-size:.82rem; font-weight:400;
+    text-transform:none; letter-spacing:normal; color:var(--ink);
+  }
 </style>
 </head>
 <body>
@@ -187,6 +200,15 @@
       </div>
 
       <div class="field">
+        <label for="f-title">Event name</label>
+        <input type="text" id="f-title" required>
+      </div>
+      <div class="field">
+        <label for="f-capacity">Total participants (optional)</label>
+        <input type="number" id="f-capacity" min="1" step="1">
+      </div>
+
+      <div class="field">
         <label for="f-date">Date</label>
         <input type="date" id="f-date" required>
       </div>
@@ -200,18 +222,32 @@
           <input type="time" id="f-end" required>
         </div>
       </div>
-      <div class="field-row" id="repeat-row">
+      <div id="repeat-row">
+        <h3 class="section-title">Recurring event</h3>
         <div class="field">
           <label for="f-repeat">Repeats</label>
           <select id="f-repeat">
             <option value="none">Does not repeat</option>
-            <option value="daily">Every day</option>
             <option value="weekly">Every week</option>
+            <option value="biweekly">Every 2 weeks</option>
+            <option value="monthly">Every month</option>
           </select>
         </div>
-        <div class="field" id="repeat-count-field" hidden>
-          <label for="f-repeat-count">Total occurrences</label>
-          <input type="number" id="f-repeat-count" min="2" max="52" value="2">
+        <div class="field" id="repeat-weekdays-field" hidden>
+          <label>Days of the week</label>
+          <div id="weekday-checks">
+            <label><input type="checkbox" value="0" class="f-weekday"> Sun</label>
+            <label><input type="checkbox" value="1" class="f-weekday"> Mon</label>
+            <label><input type="checkbox" value="2" class="f-weekday"> Tue</label>
+            <label><input type="checkbox" value="3" class="f-weekday"> Wed</label>
+            <label><input type="checkbox" value="4" class="f-weekday"> Thu</label>
+            <label><input type="checkbox" value="5" class="f-weekday"> Fri</label>
+            <label><input type="checkbox" value="6" class="f-weekday"> Sat</label>
+          </div>
+        </div>
+        <div class="field" id="repeat-end-field" hidden>
+          <label for="f-repeat-end">End date</label>
+          <input type="date" id="f-repeat-end">
         </div>
       </div>
       <div class="field">
@@ -319,7 +355,7 @@
           var chip = document.createElement("button");
           chip.type = "button";
           chip.className = "cal-chip";
-          chip.textContent = (ev.startTime ? ev.startTime + " " : "") + capitalize(ev.type || "");
+          chip.textContent = (ev.startTime ? ev.startTime + " " : "") + (ev.title || capitalize(ev.type || ""));
           chip.title = ev.description || "";
           chip.addEventListener("click", function(){ openForm(ev); });
           cell.appendChild(chip);
@@ -347,9 +383,12 @@
   document.getElementById("type-prev").addEventListener("click", function(){ setTypeIndex(typeIndex-1); });
   document.getElementById("type-next").addEventListener("click", function(){ setTypeIndex(typeIndex+1); });
 
-  document.getElementById("f-repeat").addEventListener("change", function(e){
-    document.getElementById("repeat-count-field").hidden = (e.target.value === "none");
-  });
+  function updateRepeatFieldsVisibility(){
+    var freq = document.getElementById("f-repeat").value;
+    document.getElementById("repeat-weekdays-field").hidden = (freq !== "weekly" && freq !== "biweekly");
+    document.getElementById("repeat-end-field").hidden = (freq === "none");
+  }
+  document.getElementById("f-repeat").addEventListener("change", updateRepeatFieldsVisibility);
 
   function openForm(existing){
     editingId = existing ? existing.id : null;
@@ -357,6 +396,8 @@
     removeImage = false;
     document.getElementById("panel-title").textContent = existing ? "Edit event" : "New event";
     setTypeIndex(existing ? TYPES.indexOf(existing.type) : 0);
+    document.getElementById("f-title").value = existing ? existing.title || "" : "";
+    document.getElementById("f-capacity").value = existing && existing.capacity ? existing.capacity : "";
     document.getElementById("f-date").value = existing ? existing.date || "" : "";
     document.getElementById("f-start").value = existing ? existing.startTime || "" : "";
     document.getElementById("f-end").value = existing ? existing.endTime || "" : "";
@@ -364,8 +405,9 @@
     document.getElementById("f-link").value = existing ? existing.registrationUrl || "" : "";
     document.getElementById("f-image").value = "";
     document.getElementById("f-repeat").value = "none";
-    document.getElementById("repeat-count-field").hidden = true;
-    document.getElementById("f-repeat-count").value = "2";
+    document.querySelectorAll(".f-weekday").forEach(function(cb){ cb.checked = false; });
+    document.getElementById("f-repeat-end").value = "";
+    updateRepeatFieldsVisibility();
     // Recurrence only makes sense when creating a new series — an existing
     // occurrence is edited/deleted on its own, never as "the whole series".
     document.getElementById("repeat-row").hidden = !!existing;
@@ -395,6 +437,8 @@
 
   function setFormDisabled(disabled){
     document.getElementById("save-btn").disabled = disabled;
+    document.getElementById("f-title").disabled = disabled;
+    document.getElementById("f-capacity").disabled = disabled;
     document.getElementById("f-date").disabled = disabled;
     document.getElementById("f-start").disabled = disabled;
     document.getElementById("f-end").disabled = disabled;
@@ -402,7 +446,8 @@
     document.getElementById("f-image").disabled = disabled;
     document.getElementById("f-link").disabled = disabled;
     document.getElementById("f-repeat").disabled = disabled;
-    document.getElementById("f-repeat-count").disabled = disabled;
+    document.getElementById("f-repeat-end").disabled = disabled;
+    document.querySelectorAll(".f-weekday").forEach(function(cb){ cb.disabled = disabled; });
     document.getElementById("type-prev").disabled = disabled;
     document.getElementById("type-next").disabled = disabled;
   }
@@ -453,14 +498,23 @@
   document.getElementById("event-form").addEventListener("submit", function(e){
     e.preventDefault();
 
+    var title = document.getElementById("f-title").value.trim();
+    var capacity = document.getElementById("f-capacity").value;
     var date = document.getElementById("f-date").value;
     var start = document.getElementById("f-start").value;
     var end = document.getElementById("f-end").value;
     var desc = document.getElementById("f-desc").value.trim();
     var link = document.getElementById("f-link").value.trim();
 
-    if(!date || !start || !end || !desc){
-      setFormStatus("Date, start/end time and description are required.", "error");
+    if(!title || !date || !start || !end || !desc){
+      setFormStatus("Event name, date, start/end time and description are required.", "error");
+      return;
+    }
+    var repeatFrequency = document.getElementById("f-repeat").value;
+    var repeatEnd = document.getElementById("f-repeat-end").value;
+    var repeatWeekdays = Array.from(document.querySelectorAll(".f-weekday:checked")).map(function(cb){ return cb.value; });
+    if(!editingId && repeatFrequency !== "none" && !repeatEnd){
+      setFormStatus("An end date is required for a recurring event.", "error");
       return;
     }
     if(link){
@@ -477,7 +531,9 @@
     setFormDisabled(true);
 
     var formData = new FormData();
+    formData.append("title", title);
     formData.append("type", TYPES[typeIndex]);
+    formData.append("capacity", capacity);
     formData.append("date", date);
     formData.append("startTime", start);
     formData.append("endTime", end);
@@ -485,12 +541,10 @@
     formData.append("registrationUrl", link);
     if(pendingFile) formData.append("image", pendingFile);
     if(removeImage) formData.append("removeImage", "true");
-    if(!editingId){
-      var repeatFrequency = document.getElementById("f-repeat").value;
-      if(repeatFrequency !== "none"){
-        formData.append("repeatFrequency", repeatFrequency);
-        formData.append("repeatCount", document.getElementById("f-repeat-count").value);
-      }
+    if(!editingId && repeatFrequency !== "none"){
+      formData.append("repeatFrequency", repeatFrequency);
+      formData.append("repeatWeekdays", repeatWeekdays.join(","));
+      formData.append("repeatEndDate", repeatEnd);
     }
 
     var url = editingId ? "/api/events/" + editingId : "/api/events";

@@ -209,6 +209,7 @@
   }
   #hover-tip.visible{opacity:1; transform:translateY(0);}
   #hover-tip .hover-tip-badge{margin-bottom:.5rem;}
+  #hover-tip .hover-tip-title{margin:0 0 .3rem; font-size:.86rem; font-weight:700; color:var(--ink);}
   #hover-tip .hover-tip-meta{margin:0 0 .4rem; font-size:.78rem; color:var(--ink-soft);}
   #hover-tip .hover-tip-desc{
     margin:0; font-size:.78rem; line-height:1.45; color:var(--ink-soft);
@@ -273,6 +274,7 @@
 
 <div id="hover-tip" role="tooltip" hidden>
   <div class="hover-tip-badge"></div>
+  <p class="hover-tip-title"></p>
   <p class="hover-tip-meta"></p>
   <p class="hover-tip-desc"></p>
 </div>
@@ -398,7 +400,7 @@
           chip.appendChild(makeCatDot(ev.type));
           var label = document.createElement("span");
           label.className = "label";
-          label.textContent = (ev.startTime ? ev.startTime + " " : "") + (ev.description ? ev.description.split("\n")[0].slice(0,40) : capitalize(ev.type||""));
+          label.textContent = (ev.startTime ? ev.startTime + " " : "") + (ev.title || capitalize(ev.type||""));
           chip.appendChild(label);
           chip.addEventListener("click", function(){ hideHoverTip(); openModal(ev); });
           chip.addEventListener("mouseenter", function(){ showHoverTip(ev, chip); });
@@ -468,7 +470,7 @@
       body.appendChild(makeCatBadge(ev.type));
       var title = document.createElement("p");
       title.className = "upcoming-title";
-      title.textContent = ev.description ? ev.description.split("\n")[0] : capitalize(ev.type || "");
+      title.textContent = ev.title || capitalize(ev.type || "");
       body.appendChild(title);
       body.appendChild(meta);
 
@@ -486,6 +488,7 @@
     var badgeEl = tip.querySelector(".hover-tip-badge");
     badgeEl.textContent = "";
     badgeEl.appendChild(makeCatBadge(ev.type));
+    tip.querySelector(".hover-tip-title").textContent = ev.title || capitalize(ev.type || "");
 
     var metaBits = [];
     if(ev.date){
@@ -496,6 +499,7 @@
     }
     var tr = ev.isAllDay ? "All day" : fmtTimeRange(ev.startTime, ev.endTime);
     if(tr) metaBits.push(tr);
+    if(ev.capacity) metaBits.push(ev.capacity + " spots");
     tip.querySelector(".hover-tip-meta").textContent = metaBits.join(" · ");
     tip.querySelector(".hover-tip-desc").textContent = ev.description || "";
 
@@ -527,7 +531,7 @@
     var badgeEl = document.getElementById("modal-badge");
     badgeEl.textContent = "";
     badgeEl.appendChild(makeCatBadge(ev.type));
-    document.getElementById("modal-title").textContent = capitalize(ev.type || "");
+    document.getElementById("modal-title").textContent = ev.title || capitalize(ev.type || "");
     var metaBits = [];
     if(ev.date){
       try{
@@ -537,6 +541,7 @@
     }
     var timeRange = fmtTimeRange(ev.startTime, ev.endTime);
     if(timeRange) metaBits.push(timeRange);
+    if(ev.capacity) metaBits.push(ev.capacity + " spots");
     document.getElementById("modal-meta").textContent = metaBits.join(" · ");
     document.getElementById("modal-desc").textContent = ev.description || "";
 
