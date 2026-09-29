@@ -1,3 +1,4 @@
+// GCI Events server — public calendar + password-protected admin.
 const fs = require("fs");
 const path = require("path");
 const express = require("express");
