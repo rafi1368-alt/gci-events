@@ -201,6 +201,20 @@
   #search-input::placeholder{color:var(--ink-soft);}
   #search-input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
 
+  #hover-tip{
+    position:fixed; z-index:20; width:260px; max-width:calc(100vw - 1.5rem);
+    background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    box-shadow:var(--shadow); padding:.8rem .95rem; pointer-events:none;
+    opacity:0; transform:translateY(4px); transition:opacity .12s ease, transform .12s ease;
+  }
+  #hover-tip.visible{opacity:1; transform:translateY(0);}
+  #hover-tip .hover-tip-badge{margin-bottom:.5rem;}
+  #hover-tip .hover-tip-meta{margin:0 0 .4rem; font-size:.78rem; color:var(--ink-soft);}
+  #hover-tip .hover-tip-desc{
+    margin:0; font-size:.78rem; line-height:1.45; color:var(--ink-soft);
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+  }
+
   #load-error{
     border:1px solid var(--line); background:var(--surface); border-radius:16px;
     padding:1.5rem; text-align:center; color:var(--ink-soft); font-size:.9rem;
@@ -257,6 +271,12 @@
   <footer>Presented by the Galilee Culinary Institute, an initiative of JNF-USA.</footer>
 </div>
 
+<div id="hover-tip" role="tooltip" hidden>
+  <div class="hover-tip-badge"></div>
+  <p class="hover-tip-meta"></p>
+  <p class="hover-tip-desc"></p>
+</div>
+
 <div id="backdrop">
   <div id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <button id="modal-close" type="button" aria-label="Close">✕ Close</button>
@@ -290,7 +310,7 @@
   }
   function capitalize(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
   function imageUrl(ev){ return ev.imageFile ? ("/images/" + ev.imageFile) : null; }
-  var VALID_TYPES = ["workshop","demo","farming"];
+  var VALID_TYPES = ["workshop","demo"];
   function catClass(type){ return VALID_TYPES.indexOf(type) !== -1 ? "cat-" + type : ""; }
   function makeCatDot(type){
     var dot = document.createElement("span");
@@ -380,8 +400,11 @@
           label.className = "label";
           label.textContent = (ev.startTime ? ev.startTime + " " : "") + (ev.description ? ev.description.split("\n")[0].slice(0,40) : capitalize(ev.type||""));
           chip.appendChild(label);
-          chip.title = capitalize(ev.type || "");
-          chip.addEventListener("click", function(){ openModal(ev); });
+          chip.addEventListener("click", function(){ hideHoverTip(); openModal(ev); });
+          chip.addEventListener("mouseenter", function(){ showHoverTip(ev, chip); });
+          chip.addEventListener("mouseleave", hideHoverTip);
+          chip.addEventListener("focus", function(){ showHoverTip(ev, chip); });
+          chip.addEventListener("blur", hideHoverTip);
           cell.appendChild(chip);
         });
       }
@@ -456,6 +479,48 @@
     });
   }
 
+  var hoverTipTarget = null;
+  function showHoverTip(ev, targetEl){
+    hoverTipTarget = targetEl;
+    var tip = document.getElementById("hover-tip");
+    var badgeEl = tip.querySelector(".hover-tip-badge");
+    badgeEl.textContent = "";
+    badgeEl.appendChild(makeCatBadge(ev.type));
+
+    var metaBits = [];
+    if(ev.date){
+      try{
+        var parts = ev.date.split("-");
+        metaBits.push(new Intl.DateTimeFormat(undefined,{weekday:"short", month:"short", day:"numeric", timeZone:"UTC"}).format(new Date(Date.UTC(+parts[0], +parts[1]-1, +parts[2]))));
+      }catch(e){ metaBits.push(ev.date); }
+    }
+    var tr = ev.isAllDay ? "All day" : fmtTimeRange(ev.startTime, ev.endTime);
+    if(tr) metaBits.push(tr);
+    tip.querySelector(".hover-tip-meta").textContent = metaBits.join(" · ");
+    tip.querySelector(".hover-tip-desc").textContent = ev.description || "";
+
+    tip.hidden = false;
+    tip.classList.remove("visible");
+    tip.style.left = "-9999px";
+    tip.style.top = "0px";
+
+    var rect = targetEl.getBoundingClientRect();
+    var tipRect = tip.getBoundingClientRect();
+    var left = Math.min(Math.max(8, rect.left), window.innerWidth - tipRect.width - 8);
+    var top = rect.bottom + 8;
+    if(top + tipRect.height > window.innerHeight - 8) top = rect.top - tipRect.height - 8;
+    tip.style.left = left + "px";
+    tip.style.top = top + "px";
+    requestAnimationFrame(function(){
+      if(hoverTipTarget === targetEl) tip.classList.add("visible");
+    });
+  }
+  function hideHoverTip(){
+    hoverTipTarget = null;
+    var tip = document.getElementById("hover-tip");
+    tip.classList.remove("visible");
+  }
+
   var lastFocused = null;
   function openModal(ev){
     lastFocused = document.activeElement;
@@ -512,13 +577,16 @@
   });
 
   document.getElementById("prev-month").addEventListener("click", function(){
+    hideHoverTip();
     viewMonth--; if(viewMonth < 1){ viewMonth = 12; viewYear--; }
     render();
   });
   document.getElementById("next-month").addEventListener("click", function(){
+    hideHoverTip();
     viewMonth++; if(viewMonth > 12){ viewMonth = 1; viewYear++; }
     render();
   });
+  window.addEventListener("scroll", hideHoverTip, { passive: true });
 
   var CATEGORIES = ["all"].concat(VALID_TYPES);
   function setActiveFilter(){ hasActiveFilter = activeCategory !== "all" || !!searchQuery; }
