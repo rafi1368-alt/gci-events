@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GCI Events — Galilee Culinary Institute</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data: https://gci-events.netlify.app; connect-src 'none'; base-uri 'none'; form-action 'none';">
+<style>
+  /* Layout: keep the full month-grid calendar with prev/next nav and an
+     upcoming-events list below it (unchanged from the previous build);
+     restyle as a clean, spacious dashboard surface — slate neutrals,
+     soft rounded cards, subtle borders, colored category dots. */
+  :root{
+    --bg:#F8FAFC;
+    --surface:#FFFFFF;
+    --card:#FFFFFF;
+    --ink:#0F172A;
+    --ink-soft:#64748B;
+    --line:#E2E8F0;
+    --accent:#4F46E5;
+    --accent-soft:#EEF2FF;
+    --focus:#4F46E5;
+    --cat-workshop:#F59E0B;
+    --cat-demo:#3B82F6;
+    --cat-farming:#10B981;
+    --shadow:0 1px 2px rgba(15,23,42,0.04), 0 10px 28px rgba(15,23,42,0.07);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0F172A; --surface:#1E293B; --card:#1E293B; --ink:#F1F5F9; --ink-soft:#94A3B8;
+      --line:#334155; --accent:#818CF8; --accent-soft:#25254F; --focus:#818CF8;
+      --cat-workshop:#FBBF24; --cat-demo:#60A5FA; --cat-farming:#34D399;
+      --shadow:0 1px 2px rgba(0,0,0,0.3), 0 14px 32px rgba(0,0,0,0.4);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0F172A; --surface:#1E293B; --card:#1E293B; --ink:#F1F5F9; --ink-soft:#94A3B8;
+    --line:#334155; --accent:#818CF8; --accent-soft:#25254F; --focus:#818CF8;
+    --cat-workshop:#FBBF24; --cat-demo:#60A5FA; --cat-farming:#34D399;
+    --shadow:0 1px 2px rgba(0,0,0,0.3), 0 14px 32px rgba(0,0,0,0.4);
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0; background:var(--bg);}
+  body{
+    color:var(--ink);
+    font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:2.25rem 1rem 3rem;
+  }
+  img{max-width:100%;}
+  [hidden]{display:none !important;}
+  #shell{max-width:760px;margin:0 auto;}
+
+  header{
+    display:flex; flex-direction:column; gap:.4rem;
+    padding-bottom:1.5rem; margin-bottom:1.75rem; border-bottom:1px solid var(--line);
+  }
+  #eyebrow{font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:600;}
+  header h1{
+    font-family:Georgia,"Iowan Old Style","Palatino Linotype",Palatino,serif;
+    font-size:clamp(1.6rem,4vw,2.2rem); line-height:1.15; margin:0; font-weight:600; text-wrap:balance;
+  }
+  header p{margin:.15rem 0 0; color:var(--ink-soft); font-size:.95rem; max-width:60ch;}
+
+  #cal-nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;}
+  #cal-nav button{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px; color:var(--ink);
+    font-size:1.1rem; width:2.4rem; height:2.4rem; cursor:pointer;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  #cal-nav button:hover{background:var(--accent-soft); border-color:var(--accent);}
+  #cal-nav button:focus-visible{outline:2px solid var(--focus); outline-offset:1px;}
+  #cal-month-label{font-family:Georgia,"Iowan Old Style",serif; font-size:1.25rem; font-weight:600;}
+
+  #cal-scroll{overflow-x:auto;}
+  #cal-weekdays, #cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:.5rem; min-width:540px;}
+  #cal-weekdays{margin-bottom:.5rem;}
+  #cal-weekdays div{font-size:.7rem; text-align:center; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em;}
+  .cal-day{
+    height:4.8rem; border:1px solid var(--line); border-radius:14px; padding:.4rem;
+    display:flex; flex-direction:column; gap:.2rem; font-size:.8rem; color:var(--ink-soft);
+    background:var(--surface); transition:border-color .15s ease, box-shadow .15s ease;
+    overflow-y:auto;
+  }
+  .cal-day.has-event:hover{border-color:var(--accent); box-shadow:var(--shadow);}
+  .cal-day-num{font-variant-numeric:tabular-nums; font-size:.75rem;}
+  .cal-day.has-event .cal-day-num{color:var(--ink); font-weight:700;}
+  .cal-day.is-today{background:var(--accent-soft); border-color:var(--accent);}
+  .cal-chip{
+    display:flex; align-items:center; gap:.35rem; width:100%; text-align:left;
+    background:var(--accent-soft); border:1px solid transparent; border-radius:8px; padding:.2rem .4rem;
+    font:inherit; font-size:.68rem; line-height:1.25; color:var(--ink);
+    cursor:pointer; overflow:hidden; white-space:nowrap;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .cal-chip:hover{border-color:var(--accent);}
+  .cal-chip:focus-visible{outline:2px solid var(--focus); outline-offset:1px;}
+  .cal-chip span.label{overflow:hidden; text-overflow:ellipsis;}
+
+  .cat-dot{
+    flex:0 0 auto; width:.5rem; height:.5rem; border-radius:50%; background:var(--ink-soft);
+  }
+  .cat-dot.cat-workshop{background:var(--cat-workshop);}
+  .cat-dot.cat-demo{background:var(--cat-demo);}
+  .cat-dot.cat-farming{background:var(--cat-farming);}
+
+  .cat-badge{
+    display:inline-flex; align-items:center; gap:.4rem; font-size:.72rem; font-weight:600;
+    text-transform:capitalize; color:var(--ink-soft); background:var(--accent-soft);
+    border-radius:999px; padding:.25rem .65rem;
+  }
+
+  #empty-note{
+    border:1px dashed var(--line); border-radius:16px; padding:2.25rem 1.5rem;
+    text-align:center; color:var(--ink-soft); font-size:.92rem; margin-top:1.1rem;
+    background:var(--surface);
+  }
+
+  #upcoming{margin-top:2.5rem;}
+  #upcoming h2{
+    font-family:Georgia,"Iowan Old Style",serif; font-size:1.05rem; font-weight:600;
+    margin:0 0 1rem;
+  }
+  .upcoming-row{
+    display:flex; gap:1rem; align-items:flex-start; width:100%; text-align:left;
+    background:var(--surface); border:1px solid var(--line); border-radius:16px;
+    padding:1rem 1.1rem; margin-bottom:.7rem; cursor:pointer; font:inherit; color:inherit;
+    transition:border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+  }
+  .upcoming-row:hover{border-color:var(--accent); box-shadow:var(--shadow); transform:translateY(-1px);}
+  .upcoming-row:focus-visible{outline:2px solid var(--focus); outline-offset:1px;}
+  .upcoming-date{
+    flex:0 0 auto; width:3.1rem; text-align:center; background:var(--accent-soft);
+    border-radius:12px; padding:.4rem .1rem;
+  }
+  .upcoming-date .day{display:block; font-size:1.15rem; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums;}
+  .upcoming-date .mon{display:block; font-size:.6rem; text-transform:uppercase; color:var(--ink-soft); letter-spacing:.05em; margin-top:.15rem;}
+  .upcoming-body{min-width:0; flex:1 1 auto;}
+  .upcoming-title{
+    font-weight:600; font-size:.92rem; margin:0 0 .3rem;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .upcoming-meta{font-size:.8rem; color:var(--ink-soft); margin:0 0 .4rem;}
+  #upcoming-empty{color:var(--ink-soft); font-size:.88rem;}
+
+  footer{
+    margin-top:2.75rem; padding-top:1.1rem; border-top:1px solid var(--line);
+    font-size:.78rem; color:var(--ink-soft);
+  }
+
+  #backdrop{
+    position:fixed; inset:0; background:rgba(15,23,42,0.5);
+    display:none; align-items:flex-start; justify-content:center;
+    padding:5vh 1rem; overflow-y:auto; z-index:10;
+  }
+  #backdrop.open{display:flex;}
+  #modal{
+    background:var(--surface); border:1px solid var(--line); border-radius:20px;
+    max-width:520px; width:100%; padding:1.75rem; box-shadow:var(--shadow);
+  }
+  #modal-close{
+    float:right; background:var(--bg); border:1px solid var(--line); border-radius:10px;
+    color:var(--ink-soft); font-size:.85rem; padding:.3rem .6rem; cursor:pointer;
+  }
+  #modal-close:hover{border-color:var(--accent); color:var(--ink);}
+  #modal-image{width:100%; max-height:220px; object-fit:cover; border-radius:14px; margin-bottom:1rem; display:none;}
+  #modal .cat-badge{margin-bottom:.75rem;}
+  #modal h2{font-family:Georgia,"Iowan Old Style",serif; font-size:1.3rem; margin:0 .5rem .3rem 0; text-wrap:balance;}
+  #modal-meta{color:var(--ink-soft); font-size:.88rem; margin:0 0 1.1rem;}
+  #modal-desc{font-size:.92rem; line-height:1.6; white-space:pre-wrap; margin:0 0 1.4rem;}
+  #modal-register{
+    display:inline-block; background:var(--accent); color:#FFFFFF; text-decoration:none;
+    font-weight:600; font-size:.9rem; padding:.6rem 1.2rem; border-radius:12px;
+  }
+  #modal-register:hover{filter:brightness(0.92);}
+  #modal-register:focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+
+  #filter-bar{
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
+    gap:1rem; margin-bottom:1.75rem;
+  }
+  #filter-pills{display:flex; flex-wrap:wrap; gap:.6rem;}
+  .pill{
+    padding:.55rem 1.15rem; border-radius:999px; border:1px solid var(--line);
+    background:var(--surface); color:var(--ink-soft); font:inherit; font-size:.85rem; font-weight:600;
+    cursor:pointer; transition:background .2s ease, color .2s ease, border-color .2s ease;
+  }
+  .pill:hover{border-color:var(--accent);}
+  .pill.active{background:var(--accent); border-color:var(--accent); color:#FFFFFF;}
+  .pill:focus-visible{outline:2px solid var(--focus); outline-offset:1px;}
+
+  #search-wrap{position:relative; flex:0 1 260px; min-width:190px;}
+  #search-wrap svg{
+    position:absolute; left:.9rem; top:50%; transform:translateY(-50%);
+    width:1rem; height:1rem; color:var(--ink-soft); pointer-events:none;
+  }
+  #search-input{
+    width:100%; padding:.6rem .9rem .6rem 2.5rem; border-radius:999px; border:1px solid var(--line);
+    background:var(--surface); color:var(--ink); font:inherit; font-size:.85rem;
+    transition:border-color .2s ease, box-shadow .2s ease;
+  }
+  #search-input::placeholder{color:var(--ink-soft);}
+  #search-input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
+
+  #hover-tip{
+    position:fixed; z-index:20; width:260px; max-width:calc(100vw - 1.5rem);
+    background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    box-shadow:var(--shadow); padding:.8rem .95rem; pointer-events:none;
+    opacity:0; transform:translateY(4px); transition:opacity .12s ease, transform .12s ease;
+  }
+  #hover-tip.visible{opacity:1; transform:translateY(0);}
+  #hover-tip .hover-tip-badge{margin-bottom:.5rem;}
+  #hover-tip .hover-tip-title{margin:0 0 .3rem; font-size:.86rem; font-weight:700; color:var(--ink);}
+  #hover-tip .hover-tip-meta{margin:0 0 .4rem; font-size:.78rem; color:var(--ink-soft);}
+  #hover-tip .hover-tip-desc{
+    margin:0; font-size:.78rem; line-height:1.45; color:var(--ink-soft);
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+  }
+
+  @media (prefers-reduced-motion: no-preference){
+    .cal-day, .cal-chip, .upcoming-row, #cal-nav button, .pill, #search-input{transition-duration:.15s;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .cal-day, .cal-chip, .upcoming-row, #cal-nav button, .pill, #search-input{transition:none;}
+  }
+</style>
+</head>
+<body>
+<div id="shell">
+  <header>
+    <span id="eyebrow">Galilee Culinary Institute · by JNF-USA</span>
+    <h1>GCI Events</h1>
+    <p>Public tastings, workshops, and gatherings at the Institute — open to all. Select an event for details and registration.</p>
+  </header>
+
+  <div id="filter-bar">
+    <div id="filter-pills" role="group" aria-label="Filter by category"></div>
+    <div id="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="search" id="search-input" placeholder="Search events…" aria-label="Search events">
+    </div>
+  </div>
+
+  <div id="cal-nav">
+    <button type="button" id="prev-month" aria-label="Previous month">‹</button>
+    <span id="cal-month-label"></span>
+    <button type="button" id="next-month" aria-label="Next month">›</button>
+  </div>
+  <div id="cal-scroll">
+    <div id="cal-weekdays"></div>
+    <div id="cal-grid"></div>
+  </div>
+  <div id="empty-note" hidden>
+    No public events this month yet — try another month, or check back soon.
+  </div>
+
+  <section id="upcoming">
+    <h2>Upcoming events</h2>
+    <div id="upcoming-list"></div>
+    <p id="upcoming-empty" hidden>No upcoming events right now — check back soon.</p>
+  </section>
+
+  <footer>Presented by the Galilee Culinary Institute, an initiative of JNF-USA.</footer>
+</div>
+
+<div id="hover-tip" role="tooltip" hidden>
+  <div class="hover-tip-badge"></div>
+  <p class="hover-tip-title"></p>
+  <p class="hover-tip-meta"></p>
+  <p class="hover-tip-desc"></p>
+</div>
+
+<div id="backdrop">
+  <div id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <button id="modal-close" type="button" aria-label="Close">✕ Close</button>
+    <img id="modal-image" alt="">
+    <div id="modal-badge"></div>
+    <h2 id="modal-title"></h2>
+    <p id="modal-meta"></p>
+    <p id="modal-desc"></p>
+    <a id="modal-register" href="#" target="_blank" rel="noopener noreferrer">Register →</a>
+  </div>
+</div>
+
+<script type="application/json" id="events-data">
+[
+  {
+    "title": "American Cuisine Workshop",
+    "type": "workshop",
+    "date": "2026-10-01",
+    "startTime": "18:00",
+    "endTime": "21:00",
+    "capacity": null,
+    "description": "American cuisine is a vibrant, flavorful melting pot shaped by centuries of immigration, cultural exchange, and diverse landscapes.\nRather than a single culinary style, it is a collection of distinct regional traditions, from the rich and smoky flavors of Southern BBQ to the fresh, coastal seafood of New England, and the bold, spicy influences of Tex-Mex.\nAt its core, American food is about innovation, comfort, and fusion—taking global culinary traditions (like German sausages, Italian pasta, or West African techniques) and reinventing them into iconic staples like burgers, mac and cheese, and apple pie. In this 3-hour workshop, you will explore how this dynamic culinary history created a global food phenomenon, mastering the techniques and bold flavors that define modern American comfort food.",
+    "imageUrl": "images/cb8130d1ad633e04141aefa063ed25c7.jpg",
+    "registrationUrl": "https://tabitisrael.co.il/%D7%94%D7%96%D7%9E%D7%A0%D7%AA-%D7%9E%D7%A7%D7%95%D7%9D/create-reservation?step=search&orgId=6a65fd49801d0e4653bde5cd&locale=he-IL&source=website&type=future_reservation"
+  },
+  {
+    "title": "Hands-On Italian Cooking Workshop",
+    "type": "demo",
+    "date": "2026-10-04",
+    "startTime": "16:00",
+    "endTime": "19:00",
+    "capacity": null,
+    "description": "Craving the authentic taste of Italy?\nJoin our Hands-On Italian Cooking Workshop and learn the secrets to crafting perfect fresh pasta, rich traditional sauces, and a heavenly classic dessert from scratch!\n\nWhat's included? Premium ingredients, expert culinary techniques, fine wine, and a festive dinner to enjoy our creations.\n\nWho is it for? Food lovers, couples, and anyone looking for a fun, flavorful evening out—no prior kitchen experience needed!\n\nSpaces are limited! Comment below or send a DM to reserve your spot today!",
+    "imageUrl": "images/911fa56036877053.png",
+    "registrationUrl": "https://tabitisrael.co.il/%D7%94%D7%96%D7%9E%D7%A0%D7%AA-%D7%9E%D7%A7%D7%95%D7%9D/create-reservation?step=search&orgId=6a65fd49801d0e4653bde5cd&locale=he-IL&source=website&type=future_reservation"
+  }
+]
+</script>
+<script>
+(function(){
+  "use strict";
+
+  function readEvents(){
+    try{
+      var data = JSON.parse(document.getElementById("events-data").textContent || "[]");
+      return Array.isArray(data) ? data : [];
+    }catch(e){ return []; }
+  }
+  function isHttpUrl(s){
+    if(typeof s !== "string") return false;
+    try{ var u = new URL(s); return u.protocol === "https:" || u.protocol === "http:"; }
+    catch(e){ return false; }
+  }
+  function pad2(n){ return n < 10 ? "0"+n : ""+n; }
+  function daysInMonth(y, m){ return new Date(Date.UTC(y, m, 0)).getUTCDate(); }
+  function firstWeekday(y, m){ return new Date(Date.UTC(y, m-1, 1)).getUTCDay(); }
+  function monthLabel(y, m){
+    return new Intl.DateTimeFormat(undefined,{month:"long", year:"numeric", timeZone:"UTC"}).format(new Date(Date.UTC(y, m-1, 1)));
+  }
+  function fmtTimeRange(start, end){
+    if(!start) return "";
+    return end ? (start + "–" + end) : start;
+  }
+  function capitalize(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+  var VALID_TYPES = ["workshop","demo"];
+  function catClass(type){ return VALID_TYPES.indexOf(type) !== -1 ? "cat-" + type : ""; }
+  function makeCatDot(type){
+    var dot = document.createElement("span");
+    dot.className = "cat-dot " + catClass(type);
+    return dot;
+  }
+  function makeCatBadge(type){
+    var badge = document.createElement("span");
+    badge.className = "cat-badge";
+    badge.appendChild(makeCatDot(type));
+    var label = document.createElement("span");
+    label.textContent = capitalize(type || "");
+    badge.appendChild(label);
+    return badge;
+  }
+
+  var allEvents = readEvents();
+  var todayUTC = new Date();
+  var todayY = todayUTC.getFullYear(), todayM = todayUTC.getMonth()+1, todayD = todayUTC.getDate();
+  var viewYear = todayY, viewMonth = todayM;
+
+  var activeCategory = "all";
+  var searchQuery = "";
+  var hasActiveFilter = false;
+
+  function getFilteredEvents(){
+    return allEvents.filter(function(ev){
+      if(!ev) return false;
+      if(activeCategory !== "all" && ev.type !== activeCategory) return false;
+      if(searchQuery){
+        var hay = ((ev.description||"") + " " + (ev.type||"")).toLowerCase();
+        if(hay.indexOf(searchQuery) === -1) return false;
+      }
+      return true;
+    });
+  }
+
+  function render(){
+    document.getElementById("cal-month-label").textContent = monthLabel(viewYear, viewMonth);
+
+    var weekdaysEl = document.getElementById("cal-weekdays");
+    weekdaysEl.textContent = "";
+    ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(function(w){
+      var el = document.createElement("div"); el.textContent = w; weekdaysEl.appendChild(el);
+    });
+
+    var byDay = {};
+    getFilteredEvents().forEach(function(ev){
+      if(!ev || !ev.date) return;
+      var parts = ev.date.split("-");
+      if(+parts[0] !== viewYear || +parts[1] !== viewMonth) return;
+      var d = +parts[2];
+      if(!byDay[d]) byDay[d] = [];
+      byDay[d].push(ev);
+    });
+    Object.keys(byDay).forEach(function(d){
+      byDay[d].sort(function(a,b){ return (a.startTime||"").localeCompare(b.startTime||""); });
+    });
+
+    var grid = document.getElementById("cal-grid");
+    grid.textContent = "";
+    var lead = firstWeekday(viewYear, viewMonth);
+    for(var i=0;i<lead;i++) grid.appendChild(document.createElement("div"));
+
+    var total = daysInMonth(viewYear, viewMonth);
+    var anyThisMonth = false;
+    for(var d=1; d<=total; d++){
+      var cell = document.createElement("div");
+      cell.className = "cal-day";
+      if(viewYear === todayY && viewMonth === todayM && d === todayD) cell.classList.add("is-today");
+
+      var num = document.createElement("span");
+      num.className = "cal-day-num";
+      num.textContent = d;
+      cell.appendChild(num);
+
+      var dayEvents = byDay[d];
+      if(dayEvents && dayEvents.length){
+        anyThisMonth = true;
+        cell.classList.add("has-event");
+        dayEvents.forEach(function(ev){
+          var chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "cal-chip";
+          chip.appendChild(makeCatDot(ev.type));
+          var label = document.createElement("span");
+          label.className = "label";
+          label.textContent = (ev.startTime ? ev.startTime + " " : "") + (ev.title || capitalize(ev.type||""));
+          chip.appendChild(label);
+          chip.addEventListener("click", function(){ hideHoverTip(); openModal(ev); });
+          chip.addEventListener("mouseenter", function(){ showHoverTip(ev, chip); });
+          chip.addEventListener("mouseleave", hideHoverTip);
+          chip.addEventListener("focus", function(){ showHoverTip(ev, chip); });
+          chip.addEventListener("blur", hideHoverTip);
+          cell.appendChild(chip);
+        });
+      }
+      grid.appendChild(cell);
+    }
+
+    var emptyNote = document.getElementById("empty-note");
+    emptyNote.hidden = anyThisMonth;
+    emptyNote.textContent = hasActiveFilter
+      ? "No events match your filters this month — try another month or clear the filters."
+      : "No public events this month yet — try another month, or check back soon.";
+  }
+
+  function upcomingEvents(){
+    var todayStr = todayY + "-" + pad2(todayM) + "-" + pad2(todayD);
+    return getFilteredEvents()
+      .filter(function(ev){ return ev && ev.date && ev.date >= todayStr; })
+      .slice()
+      .sort(function(a,b){
+        if(a.date !== b.date) return a.date < b.date ? -1 : 1;
+        return (a.startTime||"").localeCompare(b.startTime||"");
+      });
+  }
+
+  function renderUpcoming(){
+    var list = document.getElementById("upcoming-list");
+    list.textContent = "";
+    var items = upcomingEvents();
+    var upcomingEmpty = document.getElementById("upcoming-empty");
+    upcomingEmpty.hidden = items.length !== 0;
+    upcomingEmpty.textContent = hasActiveFilter
+      ? "No upcoming events match your filters."
+      : "No upcoming events right now — check back soon.";
+
+    items.forEach(function(ev){
+      var parts = ev.date.split("-");
+      var dateObj = new Date(Date.UTC(+parts[0], +parts[1]-1, +parts[2]));
+
+      var row = document.createElement("button");
+      row.type = "button";
+      row.className = "upcoming-row";
+
+      var dateBox = document.createElement("div");
+      dateBox.className = "upcoming-date";
+      var day = document.createElement("span"); day.className = "day"; day.textContent = +parts[2];
+      var mon = document.createElement("span"); mon.className = "mon";
+      try{ mon.textContent = new Intl.DateTimeFormat(undefined,{month:"short", timeZone:"UTC"}).format(dateObj); }
+      catch(e){ mon.textContent = ""; }
+      dateBox.appendChild(day); dateBox.appendChild(mon);
+
+      var body = document.createElement("div");
+      body.className = "upcoming-body";
+      var meta = document.createElement("p");
+      meta.className = "upcoming-meta";
+      var metaBits = [];
+      try{ metaBits.push(new Intl.DateTimeFormat(undefined,{weekday:"short", month:"short", day:"numeric", timeZone:"UTC"}).format(dateObj)); }
+      catch(e){ metaBits.push(ev.date); }
+      var tr = fmtTimeRange(ev.startTime, ev.endTime);
+      if(tr) metaBits.push(tr);
+      meta.textContent = metaBits.join(" · ");
+      body.appendChild(makeCatBadge(ev.type));
+      var title = document.createElement("p");
+      title.className = "upcoming-title";
+      title.textContent = ev.title || capitalize(ev.type || "");
+      body.appendChild(title);
+      body.appendChild(meta);
+
+      row.appendChild(dateBox);
+      row.appendChild(body);
+      row.addEventListener("click", function(){ openModal(ev); });
+      list.appendChild(row);
+    });
+  }
+
+  var hoverTipTarget = null;
+  function showHoverTip(ev, targetEl){
+    hoverTipTarget = targetEl;
+    var tip = document.getElementById("hover-tip");
+    var badgeEl = tip.querySelector(".hover-tip-badge");
+    badgeEl.textContent = "";
+    badgeEl.appendChild(makeCatBadge(ev.type));
+    tip.querySelector(".hover-tip-title").textContent = ev.title || capitalize(ev.type || "");
+
+    var metaBits = [];
+    if(ev.date){
+      try{
+        var parts = ev.date.split("-");
+        metaBits.push(new Intl.DateTimeFormat(undefined,{weekday:"short", month:"short", day:"numeric", timeZone:"UTC"}).format(new Date(Date.UTC(+parts[0], +parts[1]-1, +parts[2]))));
+      }catch(e){ metaBits.push(ev.date); }
+    }
+    var tr = ev.isAllDay ? "All day" : fmtTimeRange(ev.startTime, ev.endTime);
+    if(tr) metaBits.push(tr);
+    if(ev.capacity) metaBits.push(ev.capacity + " spots");
+    tip.querySelector(".hover-tip-meta").textContent = metaBits.join(" · ");
+    tip.querySelector(".hover-tip-desc").textContent = ev.description || "";
+
+    tip.hidden = false;
+    tip.classList.remove("visible");
+    tip.style.left = "-9999px";
+    tip.style.top = "0px";
+
+    var rect = targetEl.getBoundingClientRect();
+    var tipRect = tip.getBoundingClientRect();
+    var left = Math.min(Math.max(8, rect.left), window.innerWidth - tipRect.width - 8);
+    var top = rect.bottom + 8;
+    if(top + tipRect.height > window.innerHeight - 8) top = rect.top - tipRect.height - 8;
+    tip.style.left = left + "px";
+    tip.style.top = top + "px";
+    requestAnimationFrame(function(){
+      if(hoverTipTarget === targetEl) tip.classList.add("visible");
+    });
+  }
+  function hideHoverTip(){
+    hoverTipTarget = null;
+    var tip = document.getElementById("hover-tip");
+    tip.classList.remove("visible");
+  }
+
+  var lastFocused = null;
+  function openModal(ev){
+    lastFocused = document.activeElement;
+    var badgeEl = document.getElementById("modal-badge");
+    badgeEl.textContent = "";
+    badgeEl.appendChild(makeCatBadge(ev.type));
+    document.getElementById("modal-title").textContent = ev.title || capitalize(ev.type || "");
+    var metaBits = [];
+    if(ev.date){
+      try{
+        var parts = ev.date.split("-");
+        metaBits.push(new Intl.DateTimeFormat(undefined,{weekday:"short", month:"short", day:"numeric", timeZone:"UTC"}).format(new Date(Date.UTC(+parts[0], +parts[1]-1, +parts[2]))));
+      }catch(e){ metaBits.push(ev.date); }
+    }
+    var timeRange = fmtTimeRange(ev.startTime, ev.endTime);
+    if(timeRange) metaBits.push(timeRange);
+    if(ev.capacity) metaBits.push(ev.capacity + " spots");
+    document.getElementById("modal-meta").textContent = metaBits.join(" · ");
+    document.getElementById("modal-desc").textContent = ev.description || "";
+
+    var img = document.getElementById("modal-image");
+    if(ev.imageUrl){
+      img.src = ev.imageUrl;
+      img.style.display = "block";
+    } else {
+      img.removeAttribute("src");
+      img.style.display = "none";
+    }
+
+    var reg = document.getElementById("modal-register");
+    if(isHttpUrl(ev.registrationUrl)){
+      reg.href = ev.registrationUrl;
+      reg.style.display = "inline-block";
+    } else {
+      reg.removeAttribute("href");
+      reg.style.display = "none";
+    }
+
+    document.getElementById("backdrop").classList.add("open");
+    document.getElementById("modal-close").focus();
+  }
+  function closeModal(){
+    document.getElementById("backdrop").classList.remove("open");
+    if(lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
+  }
+  document.getElementById("modal-close").addEventListener("click", closeModal);
+  document.getElementById("backdrop").addEventListener("click", function(e){
+    if(e.target.id === "backdrop") closeModal();
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape" && document.getElementById("backdrop").classList.contains("open")) closeModal();
+    if(e.key === "ArrowLeft" && !document.getElementById("backdrop").classList.contains("open")) document.getElementById("prev-month").click();
+    if(e.key === "ArrowRight" && !document.getElementById("backdrop").classList.contains("open")) document.getElementById("next-month").click();
+  });
+
+  document.getElementById("prev-month").addEventListener("click", function(){
+    hideHoverTip();
+    viewMonth--; if(viewMonth < 1){ viewMonth = 12; viewYear--; }
+    render();
+  });
+  document.getElementById("next-month").addEventListener("click", function(){
+    hideHoverTip();
+    viewMonth++; if(viewMonth > 12){ viewMonth = 1; viewYear++; }
+    render();
+  });
+  window.addEventListener("scroll", hideHoverTip, { passive: true });
+
+  var CATEGORIES = ["all"].concat(VALID_TYPES);
+  function setActiveFilter(){ hasActiveFilter = activeCategory !== "all" || !!searchQuery; }
+
+  function buildPills(){
+    var wrap = document.getElementById("filter-pills");
+    wrap.textContent = "";
+    CATEGORIES.forEach(function(cat){
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "pill" + (cat === activeCategory ? " active" : "");
+      btn.textContent = cat === "all" ? "All" : capitalize(cat);
+      btn.setAttribute("aria-pressed", cat === activeCategory ? "true" : "false");
+      btn.addEventListener("click", function(){
+        activeCategory = cat;
+        setActiveFilter();
+        buildPills();
+        render();
+        renderUpcoming();
+      });
+      wrap.appendChild(btn);
+    });
+  }
+
+  document.getElementById("search-input").addEventListener("input", function(e){
+    searchQuery = e.target.value.trim().toLowerCase();
+    setActiveFilter();
+    render();
+    renderUpcoming();
+  });
+
+  buildPills();
+  render();
+  renderUpcoming();
+})();
+</script>
+</body>
+</html>

@@ -6,6 +6,7 @@ const multer = require("multer");
 
 const store = require("./lib/store");
 const git = require("./lib/git");
+const netlify = require("./lib/netlify");
 const { basicAuth } = require("./lib/auth");
 
 const ROOT = __dirname;
@@ -101,6 +102,15 @@ app.delete("/api/events/:id", basicAuth, async function (req, res) {
     res.status(204).end();
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message || "Could not delete event" });
+  }
+});
+
+// Pushes the current upcoming events to the public Netlify site.
+app.post("/api/publish-site", basicAuth, async function (_req, res) {
+  try {
+    res.json(await netlify.publishSite());
+  } catch (err) {
+    res.status(err.status || 502).json({ error: err.message || "Could not publish the site" });
   }
 });
 

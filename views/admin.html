@@ -80,7 +80,11 @@
   .cal-chip:hover{border-color:var(--accent);}
   .cal-chip:focus-visible{outline:2px solid var(--focus); outline-offset:1px;}
 
-  #add-row{margin-top:1.25rem;}
+  #add-row{margin-top:1.25rem; display:flex; flex-wrap:wrap; align-items:center; gap:.6rem;}
+  #publish-status{flex-basis:100%; font-size:.85rem; min-height:1.1rem; color:var(--ink-soft);}
+  #publish-status.error{color:var(--danger);}
+  #publish-status.ok{color:var(--focus);}
+  #publish-status a{color:inherit;}
   .btn-primary{
     background:var(--accent); color:#FFFFFF; border:none; border-radius:10px;
     font-weight:600; font-size:.9rem; padding:.6rem 1.2rem; cursor:pointer;
@@ -183,6 +187,8 @@
 
   <div id="add-row">
     <button type="button" class="btn-primary" id="add-btn">+ Add event</button>
+    <button type="button" class="btn-secondary" id="publish-btn">Publish to site</button>
+    <div id="publish-status"></div>
   </div>
 </div>
 
@@ -599,6 +605,36 @@
   });
 
   document.getElementById("add-btn").addEventListener("click", function(){ openForm(null); });
+
+  document.getElementById("publish-btn").addEventListener("click", function(){
+    var btn = this;
+    var status = document.getElementById("publish-status");
+    btn.disabled = true;
+    status.className = "";
+    status.textContent = "Publishing to gci-events.netlify.app…";
+    fetch("/api/publish-site", { method: "POST" })
+      .then(function(r){
+        return r.json().then(function(body){
+          if(!r.ok) throw new Error(body.error || "Publish failed");
+          return body;
+        });
+      })
+      .then(function(body){
+        status.className = "ok";
+        status.textContent = "Published " + body.eventCount + " upcoming event" + (body.eventCount === 1 ? "" : "s") + " to ";
+        var link = document.createElement("a");
+        link.href = "https://gci-events.netlify.app/";
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.textContent = "gci-events.netlify.app";
+        status.appendChild(link);
+      })
+      .catch(function(err){
+        status.className = "error";
+        status.textContent = err.message || "Couldn't publish — try again.";
+      })
+      .then(function(){ btn.disabled = false; });
+  });
 
   setStatus("Loading events…");
   refreshEvents().then(function(){ setStatus(""); }).catch(function(){ setStatus("Couldn't load events — reload the page."); });
