@@ -42,7 +42,7 @@ app.post("/api/events", basicAuth, upload.single("image"), async function (req, 
   try {
     var imageFile = null;
     if (req.file) imageFile = store.saveImageBuffer(req.file.buffer, req.file.mimetype);
-    var event = store.createEvent(Object.assign({}, req.body, { imageFile: imageFile }));
+    var event = store.createEvent(Object.assign({}, req.body || {}, { imageFile: imageFile }));
     var publishPaths = ["data/events.json"];
     if (imageFile) publishPaths.push("public/images/" + imageFile);
     var result = await git.saveAndPublish(publishPaths, "Add event: " + event.type + " " + event.date);
@@ -57,9 +57,10 @@ app.patch("/api/events/:id", basicAuth, upload.single("image"), async function (
   try {
     var imageFile = null;
     if (req.file) imageFile = store.saveImageBuffer(req.file.buffer, req.file.mimetype);
-    var fields = Object.assign({}, req.body, {
+    var body = req.body || {};
+    var fields = Object.assign({}, body, {
       imageFile: imageFile,
-      removeImage: req.body.removeImage === "true",
+      removeImage: body.removeImage === "true",
     });
     var result1 = store.updateEvent(req.params.id, fields);
     var publishPaths = ["data/events.json"];
