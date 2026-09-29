@@ -64,9 +64,9 @@
   #cal-weekdays{margin-bottom:.4rem;}
   #cal-weekdays div{font-size:.68rem; text-align:center; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em;}
   .cal-day{
-    height:var(--day-height, 3.6rem); border:1px solid var(--line); border-radius:12px; padding:.3rem;
+    height:3.8rem; border:1px solid var(--line); border-radius:12px; padding:.3rem;
     display:flex; flex-direction:column; gap:.2rem; font-size:.8rem; color:var(--ink-soft);
-    background:var(--surface);
+    background:var(--surface); overflow-y:auto;
   }
   .cal-day-num{font-variant-numeric:tabular-nums; font-size:.72rem;}
   .cal-day.has-event{border-color:var(--accent);}
@@ -300,7 +300,6 @@
 
     var grid = document.getElementById("cal-grid");
     grid.textContent = "";
-    grid.style.setProperty("--day-height", "auto");
     var lead = firstWeekday(viewYear, viewMonth);
     for(var i=0;i<lead;i++) grid.appendChild(document.createElement("div"));
 
@@ -329,13 +328,6 @@
       grid.appendChild(cell);
     }
 
-    var rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-    var floorPx = 3.6 * rootPx;
-    var maxPx = floorPx;
-    Array.prototype.forEach.call(grid.querySelectorAll(".cal-day"), function(el){
-      if(el.scrollHeight > maxPx) maxPx = el.scrollHeight;
-    });
-    grid.style.setProperty("--day-height", Math.ceil(maxPx) + "px");
   }
 
   document.getElementById("prev-month").addEventListener("click", function(){
