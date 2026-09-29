@@ -22,5 +22,44 @@
     "registrationUrl": "https://tabitisrael.co.il/%D7%94%D7%96%D7%9E%D7%A0%D7%AA-%D7%9E%D7%A7%D7%95%D7%9D/create-reservation?step=search&orgId=6a65fd49801d0e4653bde5cd&locale=he-IL&source=website&type=future_reservation",
     "createdAt": "2026-09-29T10:29:27.264Z",
     "updatedAt": "2026-09-29T10:42:21.400Z"
+  },
+  {
+    "id": "cd13e83e044eb2a7",
+    "seriesId": "7c6d870d7986f3eb",
+    "type": "workshop",
+    "date": "2026-11-02",
+    "startTime": "09:00",
+    "endTime": "10:00",
+    "description": "Recurrence feature test — weekly x3.",
+    "imageFile": null,
+    "registrationUrl": null,
+    "createdAt": "2026-09-29T10:42:43.569Z",
+    "updatedAt": "2026-09-29T10:42:43.569Z"
+  },
+  {
+    "id": "9f5da3ce69ae1a99",
+    "seriesId": "7c6d870d7986f3eb",
+    "type": "workshop",
+    "date": "2026-11-09",
+    "startTime": "09:00",
+    "endTime": "10:00",
+    "description": "Recurrence feature test — weekly x3.",
+    "imageFile": null,
+    "registrationUrl": null,
+    "createdAt": "2026-09-29T10:42:43.569Z",
+    "updatedAt": "2026-09-29T10:42:43.569Z"
+  },
+  {
+    "id": "ca010add20b60795",
+    "seriesId": "7c6d870d7986f3eb",
+    "type": "workshop",
+    "date": "2026-11-16",
+    "startTime": "09:00",
+    "endTime": "10:00",
+    "description": "Recurrence feature test — weekly x3.",
+    "imageFile": null,
+    "registrationUrl": null,
+    "createdAt": "2026-09-29T10:42:43.569Z",
+    "updatedAt": "2026-09-29T10:42:43.569Z"
   }
 ]
