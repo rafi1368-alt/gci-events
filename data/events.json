@@ -10,5 +10,17 @@
     "registrationUrl": "https://tabitisrael.co.il/%D7%94%D7%96%D7%9E%D7%A0%D7%AA-%D7%9E%D7%A7%D7%95%D7%9D/create-reservation?step=search&orgId=6a65fd49801d0e4653bde5cd&locale=he-IL&source=website&type=future_reservation",
     "createdAt": "2026-09-29T09:20:50.412Z",
     "updatedAt": "2026-09-29T09:20:50.412Z"
+  },
+  {
+    "id": "5da4c08e1054f280",
+    "type": "workshop",
+    "date": "2026-10-15",
+    "startTime": "10:00",
+    "endTime": "12:00",
+    "description": "End-to-end test of the new Render-hosted admin form (via curl).",
+    "imageFile": null,
+    "registrationUrl": null,
+    "createdAt": "2026-09-29T10:23:53.139Z",
+    "updatedAt": "2026-09-29T10:23:53.139Z"
   }
 ]
