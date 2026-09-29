@@ -1,0 +1,13 @@
+{
+  "name": "gci-events-server",
+  "version": "1.0.0",
+  "description": "GCI Events — public calendar + password-protected admin form for the Galilee Culinary Institute",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}

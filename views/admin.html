@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GCI Events — Admin</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' blob:; connect-src 'self'; base-uri 'none'; form-action 'none';">
+<style>
+  :root{
+    --bg:#F8FAFC; --surface:#FFFFFF; --card:#FFFFFF; --ink:#0F172A; --ink-soft:#64748B;
+    --line:#E2E8F0; --accent:#4F46E5; --accent-soft:#EEF2FF; --focus:#4F46E5; --danger:#DC2626;
+    --shadow:0 1px 2px rgba(15,23,42,0.04), 0 10px 28px rgba(15,23,42,0.07);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0F172A; --surface:#1E293B; --card:#1E293B; --ink:#F1F5F9; --ink-soft:#94A3B8;
+      --line:#334155; --accent:#818CF8; --accent-soft:#25254F; --focus:#818CF8; --danger:#FCA5A5;
+      --shadow:0 1px 2px rgba(0,0,0,0.3), 0 14px 32px rgba(0,0,0,0.4);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0F172A; --surface:#1E293B; --card:#1E293B; --ink:#F1F5F9; --ink-soft:#94A3B8;
+    --line:#334155; --accent:#818CF8; --accent-soft:#25254F; --focus:#818CF8; --danger:#FCA5A5;
+    --shadow:0 1px 2px rgba(0,0,0,0.3), 0 14px 32px rgba(0,0,0,0.4);
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0; background:var(--bg);}
+  body{
+    color:var(--ink);
+    font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:2rem 1.25rem 3rem;
+  }
+  img{max-width:100%;}
+  [hidden]{display:none !important;}
+  #shell{max-width:720px;margin:0 auto;}
+
+  header{
+    display:flex; flex-direction:column; gap:.35rem;
+    padding-bottom:1.25rem; margin-bottom:1.5rem; border-bottom:1px solid var(--line);
+  }
+  #eyebrow{font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:600;}
+  header h1{
+    font-family:Georgia,"Iowan Old Style","Palatino Linotype",Palatino,serif;
+    font-size:1.7rem; line-height:1.15; margin:0; font-weight:600;
+  }
+  #status-line{font-size:.82rem; color:var(--ink-soft); margin-top:.4rem;}
+
+  #cal-nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:.9rem;}
+  #cal-nav button{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px; color:var(--ink);
+    font-size:1.05rem; width:2.3rem; height:2.3rem; cursor:pointer;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  #cal-nav button:hover{background:var(--accent-soft); border-color:var(--accent);}
+  #cal-nav button:focus-visible{outline:2px solid var(--focus); outline-offset:1px;}
+  #cal-month-label{font-family:Georgia,"Iowan Old Style",serif; font-size:1.15rem; font-weight:600;}
+
+  #cal-scroll{overflow-x:auto;}
+  #cal-weekdays, #cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:.4rem; min-width:500px;}
+  #cal-weekdays{margin-bottom:.4rem;}
+  #cal-weekdays div{font-size:.68rem; text-align:center; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em;}
+  .cal-day{
+    height:var(--day-height, 3.6rem); border:1px solid var(--line); border-radius:12px; padding:.3rem;
+    display:flex; flex-direction:column; gap:.2rem; font-size:.8rem; color:var(--ink-soft);
+    background:var(--surface);
+  }
+  .cal-day-num{font-variant-numeric:tabular-nums; font-size:.72rem;}
+  .cal-day.has-event{border-color:var(--accent);}
+  .cal-day.has-event .cal-day-num{color:var(--ink); font-weight:700;}
+  .cal-chip{
+    display:block; width:100%; text-align:left; background:var(--accent-soft);
+    border:1px solid transparent; border-radius:8px; padding:.2rem .4rem;
+    font:inherit; font-size:.68rem; line-height:1.25; color:var(--ink);
+    cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .cal-chip:hover{border-color:var(--accent);}
+  .cal-chip:focus-visible{outline:2px solid var(--focus); outline-offset:1px;}
+
+  #add-row{margin-top:1.25rem;}
+  .btn-primary{
+    background:var(--accent); color:#FFFFFF; border:none; border-radius:10px;
+    font-weight:600; font-size:.9rem; padding:.6rem 1.2rem; cursor:pointer;
+  }
+  .btn-primary:hover{filter:brightness(0.93);}
+  .btn-primary:disabled{opacity:.55; cursor:not-allowed;}
+  .btn-secondary{
+    background:none; color:var(--ink); border:1px solid var(--line); border-radius:10px;
+    font-size:.9rem; padding:.55rem 1.05rem; cursor:pointer;
+  }
+  .btn-secondary:hover{border-color:var(--accent);}
+  .btn-danger{
+    background:none; color:var(--danger); border:1px solid var(--danger); border-radius:10px;
+    font-size:.85rem; padding:.45rem .85rem; cursor:pointer;
+  }
+  .btn-danger:hover{background:var(--danger); color:#FFFFFF;}
+  .btn-link{
+    background:none; border:none; color:var(--accent); font-size:.78rem; padding:0;
+    cursor:pointer; text-decoration:underline;
+  }
+
+  #backdrop{
+    position:fixed; inset:0; background:rgba(15,23,42,0.5);
+    display:none; align-items:flex-start; justify-content:center;
+    padding:5vh 1rem; overflow-y:auto; z-index:10;
+  }
+  #backdrop.open{display:flex;}
+  #panel{
+    background:var(--surface); border:1px solid var(--line); border-radius:20px;
+    max-width:480px; width:100%; padding:1.75rem; box-shadow:var(--shadow);
+  }
+  #panel h2{font-family:Georgia,"Iowan Old Style",serif; font-size:1.2rem; margin:0 0 1.1rem;}
+  .field{display:flex; flex-direction:column; gap:.35rem; margin-bottom:1rem;}
+  .field label{font-size:.76rem; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.03em;}
+  .field input[type="date"], .field input[type="time"], .field input[type="url"], .field textarea{
+    font:inherit; font-size:.92rem; padding:.55rem .65rem; border:1px solid var(--line);
+    border-radius:10px; background:var(--card); color:var(--ink); width:100%;
+  }
+  .field textarea{min-height:5rem; resize:vertical;}
+  .field-row{display:flex; gap:.75rem;}
+  .field-row .field{flex:1;}
+
+  #type-stepper{
+    display:flex; align-items:center; justify-content:space-between; gap:.5rem;
+    border:1px solid var(--line); border-radius:10px; padding:.45rem .55rem; background:var(--card);
+  }
+  #type-stepper button{
+    background:none; border:1px solid var(--line); border-radius:8px; width:1.9rem; height:1.9rem;
+    font-size:.95rem; cursor:pointer; color:var(--ink);
+  }
+  #type-stepper button:hover{border-color:var(--accent);}
+  #type-label{font-weight:600; text-transform:capitalize;}
+
+  #image-preview{
+    display:none; max-width:100%; max-height:9rem; border-radius:10px; margin-top:.5rem;
+    border:1px solid var(--line);
+  }
+  .field small{color:var(--ink-soft); font-size:.75rem;}
+  .image-row{display:flex; align-items:center; gap:.75rem; margin-top:.4rem;}
+
+  #form-status{font-size:.85rem; margin:.5rem 0 0; min-height:1.1rem;}
+  #form-status.error{color:var(--danger);}
+  #form-status.ok{color:var(--focus);}
+
+  #panel-actions{display:flex; justify-content:space-between; align-items:center; margin-top:1.2rem;}
+  #panel-actions .right{display:flex; gap:.5rem;}
+</style>
+</head>
+<body>
+<div id="shell">
+  <header>
+    <span id="eyebrow">Galilee Culinary Institute · GCI Events</span>
+    <h1>Manage events</h1>
+    <div id="status-line">Loading…</div>
+  </header>
+
+  <div id="cal-nav">
+    <button type="button" id="prev-month" aria-label="Previous month">‹</button>
+    <span id="cal-month-label"></span>
+    <button type="button" id="next-month" aria-label="Next month">›</button>
+  </div>
+  <div id="cal-scroll">
+    <div id="cal-weekdays"></div>
+    <div id="cal-grid"></div>
+  </div>
+
+  <div id="add-row">
+    <button type="button" class="btn-primary" id="add-btn">+ Add event</button>
+  </div>
+</div>
+
+<div id="backdrop">
+  <div id="panel" role="dialog" aria-modal="true" aria-labelledby="panel-title">
+    <h2 id="panel-title">New event</h2>
+    <form id="event-form">
+      <div class="field">
+        <label>Event type</label>
+        <div id="type-stepper">
+          <button type="button" id="type-prev" aria-label="Previous type">‹</button>
+          <span id="type-label">Workshop</span>
+          <button type="button" id="type-next" aria-label="Next type">›</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="f-date">Date</label>
+        <input type="date" id="f-date" required>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="f-start">Start time</label>
+          <input type="time" id="f-start" required>
+        </div>
+        <div class="field">
+          <label for="f-end">End time</label>
+          <input type="time" id="f-end" required>
+        </div>
+      </div>
+      <div class="field">
+        <label for="f-desc">Description</label>
+        <textarea id="f-desc" required></textarea>
+      </div>
+      <div class="field">
+        <label for="f-image">Image (optional)</label>
+        <input type="file" id="f-image" accept="image/png,image/jpeg,image/gif,image/webp">
+        <div class="image-row">
+          <img id="image-preview" alt="">
+          <button type="button" class="btn-link" id="remove-image-btn" hidden>Remove image</button>
+        </div>
+        <small id="image-hint"></small>
+      </div>
+      <div class="field">
+        <label for="f-link">TABIT registration link (optional)</label>
+        <input type="url" id="f-link" placeholder="https://tabitisrael.co.il/...">
+      </div>
+
+      <div id="form-status"></div>
+
+      <div id="panel-actions">
+        <button type="button" class="btn-danger" id="delete-btn" hidden>Delete event</button>
+        <div class="right">
+          <button type="button" class="btn-secondary" id="cancel-btn">Cancel</button>
+          <button type="submit" class="btn-primary" id="save-btn">Save</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var TYPES = ["workshop","demo","farming"];
+  var events = [];
+  var editingId = null;
+  var pendingFile = null;
+  var removeImage = false;
+
+  var today = new Date();
+  var viewYear = today.getFullYear();
+  var viewMonth = today.getMonth() + 1;
+
+  function pad2(n){ return n < 10 ? "0"+n : ""+n; }
+  function daysInMonth(y, m){ return new Date(y, m, 0).getDate(); }
+  function firstWeekday(y, m){ return new Date(y, m-1, 1).getDay(); }
+  function monthLabel(y, m){
+    return new Intl.DateTimeFormat(undefined,{month:"long", year:"numeric"}).format(new Date(y, m-1, 1));
+  }
+  function capitalize(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+  function setStatus(text){
+    document.getElementById("status-line").textContent = text;
+  }
+
+  function findEvent(id){
+    for(var i=0;i<events.length;i++) if(events[i].id === id) return events[i];
+    return null;
+  }
+
+  function renderCalendar(){
+    document.getElementById("cal-month-label").textContent = monthLabel(viewYear, viewMonth);
+
+    var weekdaysEl = document.getElementById("cal-weekdays");
+    weekdaysEl.textContent = "";
+    ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(function(w){
+      var el = document.createElement("div"); el.textContent = w; weekdaysEl.appendChild(el);
+    });
+
+    var byDay = {};
+    events.forEach(function(ev){
+      if(!ev.date) return;
+      var parts = ev.date.split("-");
+      if(+parts[0] !== viewYear || +parts[1] !== viewMonth) return;
+      var d = +parts[2];
+      if(!byDay[d]) byDay[d] = [];
+      byDay[d].push(ev);
+    });
+    Object.keys(byDay).forEach(function(d){
+      byDay[d].sort(function(a,b){ return (a.startTime||"").localeCompare(b.startTime||""); });
+    });
+
+    var grid = document.getElementById("cal-grid");
+    grid.textContent = "";
+    grid.style.setProperty("--day-height", "auto");
+    var lead = firstWeekday(viewYear, viewMonth);
+    for(var i=0;i<lead;i++) grid.appendChild(document.createElement("div"));
+
+    var total = daysInMonth(viewYear, viewMonth);
+    for(var d=1; d<=total; d++){
+      var cell = document.createElement("div");
+      cell.className = "cal-day";
+      var num = document.createElement("span");
+      num.className = "cal-day-num";
+      num.textContent = d;
+      cell.appendChild(num);
+
+      var dayEvents = byDay[d];
+      if(dayEvents && dayEvents.length){
+        cell.classList.add("has-event");
+        dayEvents.forEach(function(ev){
+          var chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "cal-chip";
+          chip.textContent = (ev.startTime ? ev.startTime + " " : "") + capitalize(ev.type || "");
+          chip.title = ev.description || "";
+          chip.addEventListener("click", function(){ openForm(ev); });
+          cell.appendChild(chip);
+        });
+      }
+      grid.appendChild(cell);
+    }
+
+    var rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    var floorPx = 3.6 * rootPx;
+    var maxPx = floorPx;
+    Array.prototype.forEach.call(grid.querySelectorAll(".cal-day"), function(el){
+      if(el.scrollHeight > maxPx) maxPx = el.scrollHeight;
+    });
+    grid.style.setProperty("--day-height", Math.ceil(maxPx) + "px");
+  }
+
+  document.getElementById("prev-month").addEventListener("click", function(){
+    viewMonth--; if(viewMonth < 1){ viewMonth = 12; viewYear--; }
+    renderCalendar();
+  });
+  document.getElementById("next-month").addEventListener("click", function(){
+    viewMonth++; if(viewMonth > 12){ viewMonth = 1; viewYear++; }
+    renderCalendar();
+  });
+
+  var typeIndex = 0;
+  function setTypeIndex(i){
+    typeIndex = ((i % TYPES.length) + TYPES.length) % TYPES.length;
+    document.getElementById("type-label").textContent = capitalize(TYPES[typeIndex]);
+  }
+  document.getElementById("type-prev").addEventListener("click", function(){ setTypeIndex(typeIndex-1); });
+  document.getElementById("type-next").addEventListener("click", function(){ setTypeIndex(typeIndex+1); });
+
+  function openForm(existing){
+    editingId = existing ? existing.id : null;
+    pendingFile = null;
+    removeImage = false;
+    document.getElementById("panel-title").textContent = existing ? "Edit event" : "New event";
+    setTypeIndex(existing ? TYPES.indexOf(existing.type) : 0);
+    document.getElementById("f-date").value = existing ? existing.date || "" : "";
+    document.getElementById("f-start").value = existing ? existing.startTime || "" : "";
+    document.getElementById("f-end").value = existing ? existing.endTime || "" : "";
+    document.getElementById("f-desc").value = existing ? existing.description || "" : "";
+    document.getElementById("f-link").value = existing ? existing.registrationUrl || "" : "";
+    document.getElementById("f-image").value = "";
+    var preview = document.getElementById("image-preview");
+    var hint = document.getElementById("image-hint");
+    var removeBtn = document.getElementById("remove-image-btn");
+    if(existing && existing.imageFile){
+      preview.src = "/images/" + existing.imageFile;
+      preview.style.display = "block";
+      hint.textContent = "Choose a new file to replace the current image.";
+      removeBtn.hidden = false;
+    } else {
+      preview.removeAttribute("src");
+      preview.style.display = "none";
+      hint.textContent = "";
+      removeBtn.hidden = true;
+    }
+    document.getElementById("delete-btn").hidden = !existing;
+    setFormStatus("", "");
+    setFormDisabled(false);
+    document.getElementById("backdrop").classList.add("open");
+  }
+
+  function closeForm(){
+    document.getElementById("backdrop").classList.remove("open");
+  }
+
+  function setFormDisabled(disabled){
+    document.getElementById("save-btn").disabled = disabled;
+    document.getElementById("f-date").disabled = disabled;
+    document.getElementById("f-start").disabled = disabled;
+    document.getElementById("f-end").disabled = disabled;
+    document.getElementById("f-desc").disabled = disabled;
+    document.getElementById("f-image").disabled = disabled;
+    document.getElementById("f-link").disabled = disabled;
+    document.getElementById("type-prev").disabled = disabled;
+    document.getElementById("type-next").disabled = disabled;
+  }
+
+  function setFormStatus(text, kind){
+    var el = document.getElementById("form-status");
+    el.textContent = text;
+    el.className = kind || "";
+  }
+
+  document.getElementById("f-image").addEventListener("change", function(e){
+    var file = e.target.files && e.target.files[0];
+    pendingFile = file || null;
+    removeImage = false;
+    var preview = document.getElementById("image-preview");
+    if(file){
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = "block";
+      document.getElementById("image-hint").textContent = file.name;
+      document.getElementById("remove-image-btn").hidden = true;
+    }
+  });
+
+  document.getElementById("remove-image-btn").addEventListener("click", function(){
+    removeImage = true;
+    pendingFile = null;
+    document.getElementById("f-image").value = "";
+    document.getElementById("image-preview").style.display = "none";
+    document.getElementById("image-preview").removeAttribute("src");
+    document.getElementById("image-hint").textContent = "Image will be removed when you save.";
+    document.getElementById("remove-image-btn").hidden = true;
+  });
+
+  document.getElementById("cancel-btn").addEventListener("click", closeForm);
+  document.getElementById("backdrop").addEventListener("click", function(e){
+    if(e.target.id === "backdrop") closeForm();
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape" && document.getElementById("backdrop").classList.contains("open")) closeForm();
+  });
+
+  function refreshEvents(){
+    return fetch("/api/events")
+      .then(function(r){ return r.json(); })
+      .then(function(data){ events = Array.isArray(data) ? data : []; renderCalendar(); });
+  }
+
+  document.getElementById("event-form").addEventListener("submit", function(e){
+    e.preventDefault();
+
+    var date = document.getElementById("f-date").value;
+    var start = document.getElementById("f-start").value;
+    var end = document.getElementById("f-end").value;
+    var desc = document.getElementById("f-desc").value.trim();
+    var link = document.getElementById("f-link").value.trim();
+
+    if(!date || !start || !end || !desc){
+      setFormStatus("Date, start/end time and description are required.", "error");
+      return;
+    }
+    if(link){
+      try{
+        var u = new URL(link);
+        if(u.protocol !== "https:" && u.protocol !== "http:"){
+          setFormStatus("Registration link must start with http:// or https://", "error");
+          return;
+        }
+      }catch(err){ setFormStatus("That doesn't look like a valid link.", "error"); return; }
+    }
+
+    setFormStatus("Saving…", "");
+    setFormDisabled(true);
+
+    var formData = new FormData();
+    formData.append("type", TYPES[typeIndex]);
+    formData.append("date", date);
+    formData.append("startTime", start);
+    formData.append("endTime", end);
+    formData.append("description", desc);
+    formData.append("registrationUrl", link);
+    if(pendingFile) formData.append("image", pendingFile);
+    if(removeImage) formData.append("removeImage", "true");
+
+    var url = editingId ? "/api/events/" + editingId : "/api/events";
+    var method = editingId ? "PATCH" : "POST";
+
+    fetch(url, { method: method, body: formData })
+      .then(function(r){
+        return r.json().then(function(body){ return { ok: r.ok, status: r.status, body: body }; });
+      })
+      .then(function(res){
+        setFormDisabled(false);
+        if(!res.ok && res.status !== 207){
+          setFormStatus(res.body && res.body.error ? res.body.error : "Couldn't save — try again.", "error");
+          return;
+        }
+        if(res.status === 207){
+          setFormStatus(res.body.warning, "error");
+          return;
+        }
+        closeForm();
+        refreshEvents();
+      })
+      .catch(function(){
+        setFormDisabled(false);
+        setFormStatus("Couldn't reach the server — check your connection and try again.", "error");
+      });
+  });
+
+  var deleteArmed = false;
+  document.getElementById("delete-btn").addEventListener("click", function(){
+    var btn = document.getElementById("delete-btn");
+    if(!deleteArmed){
+      deleteArmed = true;
+      btn.textContent = "Click again to confirm";
+      setTimeout(function(){ deleteArmed = false; btn.textContent = "Delete event"; }, 4000);
+      return;
+    }
+    deleteArmed = false;
+    if(!editingId) return;
+    btn.disabled = true;
+    fetch("/api/events/" + editingId, { method: "DELETE" })
+      .then(function(r){
+        if(r.status === 207) return r.json().then(function(body){ throw new Error(body.warning); });
+        if(!r.ok) throw new Error("Delete failed");
+        closeForm();
+        return refreshEvents();
+      })
+      .catch(function(err){
+        setFormStatus(err.message || "Couldn't delete — try again.", "error");
+        btn.disabled = false;
+      });
+  });
+
+  document.getElementById("add-btn").addEventListener("click", function(){ openForm(null); });
+
+  setStatus("Loading events…");
+  refreshEvents().then(function(){ setStatus(""); }).catch(function(){ setStatus("Couldn't load events — reload the page."); });
+})();
+</script>
+</body>
+</html>
