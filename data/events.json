@@ -24,19 +24,6 @@
     "updatedAt": "2026-09-29T10:42:21.400Z"
   },
   {
-    "id": "cd13e83e044eb2a7",
-    "seriesId": "7c6d870d7986f3eb",
-    "type": "workshop",
-    "date": "2026-11-02",
-    "startTime": "09:00",
-    "endTime": "10:00",
-    "description": "Recurrence feature test — weekly x3.",
-    "imageFile": null,
-    "registrationUrl": null,
-    "createdAt": "2026-09-29T10:42:43.569Z",
-    "updatedAt": "2026-09-29T10:42:43.569Z"
-  },
-  {
     "id": "9f5da3ce69ae1a99",
     "seriesId": "7c6d870d7986f3eb",
     "type": "workshop",
