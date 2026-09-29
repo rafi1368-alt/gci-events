@@ -26,21 +26,6 @@
     "title": "Hands-On Italian Cooking Workshop"
   },
   {
-    "id": "0054c3d15ebb1ecd",
-    "seriesId": "ac850ce40eee2f56",
-    "title": "Fall Sourdough Series",
-    "type": "workshop",
-    "date": "2026-11-17",
-    "startTime": "17:00",
-    "endTime": "19:00",
-    "capacity": 12,
-    "description": "Weekly sourdough baking sessions.",
-    "imageFile": null,
-    "registrationUrl": null,
-    "createdAt": "2026-09-29T11:59:51.505Z",
-    "updatedAt": "2026-09-29T11:59:51.505Z"
-  },
-  {
     "id": "f9d7556f67f8967e",
     "seriesId": "ac850ce40eee2f56",
     "title": "Fall Sourdough Series",
