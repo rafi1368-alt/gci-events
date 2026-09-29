@@ -40,9 +40,22 @@ app.get("/api/events", function (_req, res) {
 
 app.post("/api/events", basicAuth, upload.single("image"), async function (req, res) {
   try {
+    var body = req.body || {};
     var imageFile = null;
     if (req.file) imageFile = store.saveImageBuffer(req.file.buffer, req.file.mimetype);
-    var event = store.createEvent(Object.assign({}, req.body || {}, { imageFile: imageFile }));
+    var fields = Object.assign({}, body, { imageFile: imageFile });
+    var repeatFrequency = body.repeatFrequency || "none";
+
+    if (repeatFrequency !== "none") {
+      var created = store.createEventSeries(fields, repeatFrequency, body.repeatCount);
+      var seriesPaths = ["data/events.json"];
+      if (imageFile) seriesPaths.push("public/images/" + imageFile);
+      var seriesResult = await git.saveAndPublish(seriesPaths, "Add event series: " + created[0].type + " starting " + created[0].date + " (x" + created.length + " " + repeatFrequency + ")");
+      if (!seriesResult.ok) return res.status(207).json({ events: created, warning: "Saved locally, but publishing to GitHub failed — this may not survive a restart.", steps: seriesResult.steps });
+      return res.status(201).json({ events: created });
+    }
+
+    var event = store.createEvent(fields);
     var publishPaths = ["data/events.json"];
     if (imageFile) publishPaths.push("public/images/" + imageFile);
     var result = await git.saveAndPublish(publishPaths, "Add event: " + event.type + " " + event.date);

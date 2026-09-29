@@ -115,7 +115,8 @@
   #panel h2{font-family:Georgia,"Iowan Old Style",serif; font-size:1.2rem; margin:0 0 1.1rem;}
   .field{display:flex; flex-direction:column; gap:.35rem; margin-bottom:1rem;}
   .field label{font-size:.76rem; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.03em;}
-  .field input[type="date"], .field input[type="time"], .field input[type="url"], .field textarea{
+  .field input[type="date"], .field input[type="time"], .field input[type="url"],
+  .field input[type="number"], .field select, .field textarea{
     font:inherit; font-size:.92rem; padding:.55rem .65rem; border:1px solid var(--line);
     border-radius:10px; background:var(--card); color:var(--ink); width:100%;
   }
@@ -197,6 +198,20 @@
         <div class="field">
           <label for="f-end">End time</label>
           <input type="time" id="f-end" required>
+        </div>
+      </div>
+      <div class="field-row" id="repeat-row">
+        <div class="field">
+          <label for="f-repeat">Repeats</label>
+          <select id="f-repeat">
+            <option value="none">Does not repeat</option>
+            <option value="daily">Every day</option>
+            <option value="weekly">Every week</option>
+          </select>
+        </div>
+        <div class="field" id="repeat-count-field" hidden>
+          <label for="f-repeat-count">Total occurrences</label>
+          <input type="number" id="f-repeat-count" min="2" max="52" value="2">
         </div>
       </div>
       <div class="field">
@@ -340,6 +355,10 @@
   document.getElementById("type-prev").addEventListener("click", function(){ setTypeIndex(typeIndex-1); });
   document.getElementById("type-next").addEventListener("click", function(){ setTypeIndex(typeIndex+1); });
 
+  document.getElementById("f-repeat").addEventListener("change", function(e){
+    document.getElementById("repeat-count-field").hidden = (e.target.value === "none");
+  });
+
   function openForm(existing){
     editingId = existing ? existing.id : null;
     pendingFile = null;
@@ -352,6 +371,12 @@
     document.getElementById("f-desc").value = existing ? existing.description || "" : "";
     document.getElementById("f-link").value = existing ? existing.registrationUrl || "" : "";
     document.getElementById("f-image").value = "";
+    document.getElementById("f-repeat").value = "none";
+    document.getElementById("repeat-count-field").hidden = true;
+    document.getElementById("f-repeat-count").value = "2";
+    // Recurrence only makes sense when creating a new series — an existing
+    // occurrence is edited/deleted on its own, never as "the whole series".
+    document.getElementById("repeat-row").hidden = !!existing;
     var preview = document.getElementById("image-preview");
     var hint = document.getElementById("image-hint");
     var removeBtn = document.getElementById("remove-image-btn");
@@ -384,6 +409,8 @@
     document.getElementById("f-desc").disabled = disabled;
     document.getElementById("f-image").disabled = disabled;
     document.getElementById("f-link").disabled = disabled;
+    document.getElementById("f-repeat").disabled = disabled;
+    document.getElementById("f-repeat-count").disabled = disabled;
     document.getElementById("type-prev").disabled = disabled;
     document.getElementById("type-next").disabled = disabled;
   }
@@ -466,6 +493,13 @@
     formData.append("registrationUrl", link);
     if(pendingFile) formData.append("image", pendingFile);
     if(removeImage) formData.append("removeImage", "true");
+    if(!editingId){
+      var repeatFrequency = document.getElementById("f-repeat").value;
+      if(repeatFrequency !== "none"){
+        formData.append("repeatFrequency", repeatFrequency);
+        formData.append("repeatCount", document.getElementById("f-repeat-count").value);
+      }
+    }
 
     var url = editingId ? "/api/events/" + editingId : "/api/events";
     var method = editingId ? "PATCH" : "POST";
