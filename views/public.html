@@ -72,11 +72,11 @@
   #cal-month-label{font-family:Georgia,"Iowan Old Style",serif; font-size:1.25rem; font-weight:600;}
 
   #cal-scroll{overflow-x:auto;}
-  #cal-weekdays, #cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:.5rem; min-width:540px;}
+  #cal-weekdays, #cal-grid{display:grid; grid-template-columns:repeat(6,1fr); gap:.5rem; min-width:480px;}
   #cal-weekdays{margin-bottom:.5rem;}
   #cal-weekdays div{font-size:.7rem; text-align:center; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em;}
   .cal-day{
-    height:4.8rem; border:1px solid var(--line); border-radius:14px; padding:.4rem;
+    height:9.5rem; border:1px solid var(--line); border-radius:14px; padding:.4rem;
     display:flex; flex-direction:column; gap:.2rem; font-size:.8rem; color:var(--ink-soft);
     background:var(--surface); transition:border-color .15s ease, box-shadow .15s ease;
     overflow-y:auto;
@@ -366,7 +366,7 @@
 
     var weekdaysEl = document.getElementById("cal-weekdays");
     weekdaysEl.textContent = "";
-    ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(function(w){
+    ["Sun","Mon","Tue","Wed","Thu","Fri"].forEach(function(w){
       var el = document.createElement("div"); el.textContent = w; weekdaysEl.appendChild(el);
     });
 
@@ -385,12 +385,15 @@
 
     var grid = document.getElementById("cal-grid");
     grid.textContent = "";
-    var lead = firstWeekday(viewYear, viewMonth);
+    var fw = firstWeekday(viewYear, viewMonth); // 0=Sun..6=Sat
+    var lead = (fw === 6) ? 0 : fw; // Saturdays have no column, so a month that opens on Saturday starts the grid at its first Sunday instead
     for(var i=0;i<lead;i++) grid.appendChild(document.createElement("div"));
 
     var total = daysInMonth(viewYear, viewMonth);
     var anyThisMonth = false;
     for(var d=1; d<=total; d++){
+      if((fw + d - 1) % 7 === 6) continue; // no Saturday events — skip the column entirely
+
       var cell = document.createElement("div");
       cell.className = "cal-day";
       if(viewYear === todayY && viewMonth === todayM && d === todayD) cell.classList.add("is-today");
