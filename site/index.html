@@ -151,6 +151,12 @@
   }
   .upcoming-meta{font-size:.8rem; color:var(--ink-soft); margin:0 0 .4rem;}
   #upcoming-empty{color:var(--ink-soft); font-size:.88rem;}
+  .upcoming-thumb{
+    flex:0 0 auto; width:4.5rem; height:4.5rem; border-radius:8px; overflow:hidden;
+    background:var(--primary-soft);
+  }
+  .upcoming-thumb img{width:100%; height:100%; object-fit:cover; display:block; transition:transform .3s ease;}
+  .upcoming-row:hover .upcoming-thumb img{transform:scale(1.05);}
 
   footer{
     margin-top:2.75rem; padding-top:1.1rem; border-top:1px solid var(--line);
@@ -234,7 +240,7 @@
     .cal-day, .cal-chip, .upcoming-row, #cal-nav button, .pill, #search-input, #modal-image{transition-duration:.15s;}
   }
   @media (prefers-reduced-motion: reduce){
-    .cal-day, .cal-chip, .upcoming-row, #cal-nav button, .pill, #search-input, #modal-image{transition:none;}
+    .cal-day, .cal-chip, .upcoming-row, #cal-nav button, .pill, #search-input, #modal-image, .upcoming-thumb img{transition:none;}
   }
 </style>
 </head>
@@ -514,6 +520,15 @@
 
       row.appendChild(dateBox);
       row.appendChild(body);
+      if(ev.imageUrl){
+        var thumb = document.createElement("div");
+        thumb.className = "upcoming-thumb";
+        var thumbImg = document.createElement("img");
+        thumbImg.src = ev.imageUrl;
+        thumbImg.alt = "";
+        thumb.appendChild(thumbImg);
+        row.appendChild(thumb);
+      }
       row.addEventListener("click", function(){ openModal(ev); });
       list.appendChild(row);
     });
