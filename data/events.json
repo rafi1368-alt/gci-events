@@ -191,5 +191,20 @@
     "registrationUrl": "https://tabitisrael.co.il/%D7%94%D7%96%D7%9E%D7%A0%D7%AA-%D7%9E%D7%A7%D7%95%D7%9D/create-reservation?step=search&orgId=6a65fd49801d0e4653bde5cd&locale=he-IL&source=website&type=future_reservation",
     "createdAt": "2026-09-29T12:13:49.572Z",
     "updatedAt": "2026-09-29T12:13:49.572Z"
+  },
+  {
+    "id": "1e294e654a3cf6b7",
+    "title": "Plant-Based Cooking Demonstration",
+    "type": "demo",
+    "date": "2026-10-08",
+    "startTime": "09:00",
+    "endTime": "12:00",
+    "capacity": 28,
+    "price": 300,
+    "description": "Get ready to redefine everything you know about vegetables!\r\n\r\nYou are cordially invited to an exclusive Plant-Based Cooking Demonstration. \r\n\r\nOver the course of 3 hours, our chef will guide you through the creation of 5 stunning, entirely plant-based courses—showing you how to turn simple greens into culinary masterpieces.\r\n\r\nWhether you are a seasoned foodie, a plant-based enthusiast, or just looking for some fresh culinary inspiration, this is an evening you won’t want to miss. Yes, there will be plenty of tasting!",
+    "imageFile": "1011d36f1925b038.jpg",
+    "registrationUrl": "https://tabitisrael.co.il/%D7%94%D7%96%D7%9E%D7%A0%D7%AA-%D7%9E%D7%A7%D7%95%D7%9D/create-reservation?step=search&orgId=6a65fd49801d0e4653bde5cd&locale=he-IL&source=website&type=future_reservation",
+    "createdAt": "2026-10-01T19:36:28.772Z",
+    "updatedAt": "2026-10-01T19:36:28.772Z"
   }
 ]
