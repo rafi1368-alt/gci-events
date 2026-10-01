@@ -18,12 +18,14 @@
     "date": "2026-10-04",
     "startTime": "16:00",
     "endTime": "19:00",
-    "description": "Craving the authentic taste of Italy?\nJoin our Hands-On Italian Cooking Workshop and learn the secrets to crafting perfect fresh pasta, rich traditional sauces, and a heavenly classic dessert from scratch!\n\nWhat's included? Premium ingredients, expert culinary techniques, fine wine, and a festive dinner to enjoy our creations.\n\nWho is it for? Food lovers, couples, and anyone looking for a fun, flavorful evening out—no prior kitchen experience needed!\n\nSpaces are limited! Comment below or send a DM to reserve your spot today!",
+    "description": "Craving the authentic taste of Italy?\r\nJoin our Hands-On Italian Cooking Workshop and learn the secrets to crafting perfect fresh pasta, rich traditional sauces, and a heavenly classic dessert from scratch!\r\n\r\nWhat's included? Premium ingredients, expert culinary techniques, fine wine, and a festive dinner to enjoy our creations.\r\n\r\nWho is it for? Food lovers, couples, and anyone looking for a fun, flavorful evening out—no prior kitchen experience needed!\r\n\r\nSpaces are limited! Comment below or send a DM to reserve your spot today!",
     "imageFile": "911fa56036877053.png",
     "registrationUrl": "https://tabitisrael.co.il/%D7%94%D7%96%D7%9E%D7%A0%D7%AA-%D7%9E%D7%A7%D7%95%D7%9D/create-reservation?step=search&orgId=6a65fd49801d0e4653bde5cd&locale=he-IL&source=website&type=future_reservation",
     "createdAt": "2026-09-29T10:29:27.264Z",
-    "updatedAt": "2026-09-29T10:55:21.904Z",
-    "title": "Hands-On Italian Cooking Workshop"
+    "updatedAt": "2026-10-01T19:26:49.509Z",
+    "title": "Hands-On Italian Cooking Workshop",
+    "capacity": null,
+    "price": 150
   },
   {
     "id": "21fabaef1a6ea36c",
