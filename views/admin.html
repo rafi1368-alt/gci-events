@@ -60,11 +60,11 @@
   #cal-month-label{font-family:Georgia,"Iowan Old Style",serif; font-size:1.15rem; font-weight:600;}
 
   #cal-scroll{overflow-x:auto;}
-  #cal-weekdays, #cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:.4rem; min-width:500px;}
+  #cal-weekdays, #cal-grid{display:grid; grid-template-columns:repeat(6,1fr); gap:.4rem; min-width:460px;}
   #cal-weekdays{margin-bottom:.4rem;}
   #cal-weekdays div{font-size:.68rem; text-align:center; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em;}
   .cal-day{
-    height:3.8rem; border:1px solid var(--line); border-radius:12px; padding:.3rem;
+    height:9rem; border:1px solid var(--line); border-radius:12px; padding:.3rem;
     display:flex; flex-direction:column; gap:.2rem; font-size:.8rem; color:var(--ink-soft);
     background:var(--surface); overflow-y:auto;
   }
@@ -327,7 +327,7 @@
 
     var weekdaysEl = document.getElementById("cal-weekdays");
     weekdaysEl.textContent = "";
-    ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(function(w){
+    ["Sun","Mon","Tue","Wed","Thu","Fri"].forEach(function(w){
       var el = document.createElement("div"); el.textContent = w; weekdaysEl.appendChild(el);
     });
 
@@ -346,11 +346,13 @@
 
     var grid = document.getElementById("cal-grid");
     grid.textContent = "";
-    var lead = firstWeekday(viewYear, viewMonth);
+    var fw = firstWeekday(viewYear, viewMonth); // 0=Sun..6=Sat
+    var lead = (fw === 6) ? 0 : fw; // no Saturday column
     for(var i=0;i<lead;i++) grid.appendChild(document.createElement("div"));
 
     var total = daysInMonth(viewYear, viewMonth);
     for(var d=1; d<=total; d++){
+      if((fw + d - 1) % 7 === 6) continue; // no Saturday events
       var cell = document.createElement("div");
       cell.className = "cal-day";
       var num = document.createElement("span");
