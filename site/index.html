@@ -692,5 +692,27 @@
   renderUpcoming();
 })();
 </script>
+<script>
+// Embedding support: when this page is shown inside an iframe (e.g. on the
+// GCI Sitefinity site), tell the parent window how tall the content is so the
+// iframe can auto-resize, and when the event detail window opens or closes.
+(function(){
+  if(window.parent === window) return;
+  function send(msg){ try{ window.parent.postMessage(msg, "*"); }catch(e){} }
+  var lastHeight = 0;
+  function sendHeight(){
+    var h = Math.ceil(document.body.getBoundingClientRect().height);
+    if(h !== lastHeight){ lastHeight = h; send({type:"gci-events-height", height:h}); }
+  }
+  if("ResizeObserver" in window) new ResizeObserver(sendHeight).observe(document.body);
+  window.addEventListener("load", sendHeight);
+  window.addEventListener("resize", sendHeight);
+  sendHeight();
+  var backdrop = document.getElementById("backdrop");
+  new MutationObserver(function(){
+    send({type:"gci-events-modal", open: backdrop.classList.contains("open")});
+  }).observe(backdrop, {attributes:true, attributeFilter:["class"]});
+})();
+</script>
 </body>
 </html>
